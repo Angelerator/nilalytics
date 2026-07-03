@@ -41,6 +41,24 @@ FROM remote.query('
     `DROP`, `ALTER`, `ATTACH`, …) from Quack clients. Dashboards can read and run
     maintenance functions, but cannot mutate data.
 
+## Backend activity
+
+Backend spans land in `otlp_traces` (`status_code`: 1 = ok, 2 = error). Get
+success/failure and p95 latency per route:
+
+```sql
+FROM remote.query('
+  SELECT json_extract_string(span_attributes, ''$."http.route"'') AS route,
+         count(*) AS calls,
+         count(*) FILTER (WHERE status_code = 2) AS errors,
+         round(quantile_cont(duration_time_unix_nano, 0.95) / 1e6) AS p95_ms
+  FROM lake.main.otlp_traces
+  GROUP BY 1 ORDER BY calls DESC
+');
+```
+
+See [Backend activity](backend.md) for instrumenting and tying spans to the user.
+
 ## Handy columns
 
 `otlp_logs`: `time_unix_nano`, `body` (event name), `severity_text`,
