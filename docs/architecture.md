@@ -9,7 +9,7 @@ flowchart LR
   IOS["iOS · OTel"] -->|OTLP| GW
   AND["Android · OTel"] -->|OTLP| GW
   GW["Ingest Gateway :4319<br/>CORS · short-lived tokens · TLS"] --> SRV["OTLP server :4318<br/>(duckdb-otlp, single writer)"]
-  BE["Backend services · OTel"] -->|OTLP (private net)| SRV
+  BE["Backend services · OTel"] -->|"OTLP · private net"| SRV
   SRV --> LAKE[("DuckLake<br/>hot: inlined rows in catalog<br/>cold: Parquet on object storage<br/>(S3/GCS/R2/Azure)")]
   LAKE --> QUACK["Quack :9494"]
   QUACK --> READ["DuckDB / DuckDB-WASM<br/>dashboards, funnels, errors, traces"]
