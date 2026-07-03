@@ -12,7 +12,7 @@ nilalytics collects product events, errors, and performance data over
 [DuckLake](https://ducklake.select/) lakehouse on any major cloud's object
 storage, and serves sub‑second reads over DuckDB's [Quack](https://duckdb.org/docs/stable/core_extensions/quack) protocol — no warehouse, no per‑event fees, no data leaving your infrastructure.
 
-- **One SDK per platform:** Grafana Faro (web) or OpenTelemetry SDKs (mobile) → OTLP.
+- **Web, mobile _and_ backends:** Grafana Faro (web), OpenTelemetry SDKs (mobile + server) → OTLP. Record user actions *and* whether the backend calls behind them succeeded — in one lake.
 - **Runs on any cloud:** S3, MinIO, Google Cloud Storage, Cloudflare R2, or Azure / ADLS Gen2.
 - **Small files solved:** DuckLake data inlining keeps streaming writes fast and cheap.
 - **Batteries included:** funnels, retention, errors, traces, metrics, cross‑device identity.
@@ -53,6 +53,7 @@ flowchart LR
   W["Web · Grafana Faro"] -->|OTLP + token| GW
   M["Mobile · OpenTelemetry"] -->|OTLP + token| GW
   GW["Ingest Gateway<br/>CORS · tokens · TLS"] --> SRV["OTLP server<br/>(duckdb-otlp)"]
+  B["Backend services · OpenTelemetry"] -->|OTLP (private net)| SRV
   SRV --> LAKE[("DuckLake<br/>DuckDB + Quack catalog<br/>+ Parquet on object storage")]
   LAKE --> READ["Reads: DuckDB / DuckDB-WASM<br/>over Quack"]
 ```

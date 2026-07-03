@@ -12,7 +12,7 @@ No data warehouse. No per‑event fees. No data leaving your infrastructure.
 
 ## Why nilalytics
 
-- **One SDK per platform.** Grafana Faro on the web, OpenTelemetry SDKs on mobile — both speak OTLP.
+- **One SDK per platform.** Grafana Faro on the web, OpenTelemetry SDKs on mobile and **backend services** — all speak OTLP, so you capture user actions *and* whether the backend calls behind them succeeded. See [Backend activity](backend.md).
 - **Runs on any cloud.** S3, MinIO, Google Cloud Storage, Cloudflare R2, or Azure / ADLS Gen2 — switch with one env var.
 - **No small‑files problem.** DuckLake *data inlining* keeps recent events in the catalog (hot) and flushes older data to Parquet (cold), so streaming stays fast and cheap.
 - **Product analytics built in.** Funnels, retention, user paths, errors, traces, metrics.
@@ -26,6 +26,7 @@ flowchart LR
   W["Web · Grafana Faro"] -->|OTLP + token| GW
   M["Mobile · OpenTelemetry"] -->|OTLP + token| GW
   GW["Ingest Gateway<br/>CORS · tokens · TLS"] --> SRV["OTLP server<br/>(duckdb-otlp)"]
+  B["Backend services · OpenTelemetry"] -->|OTLP| SRV
   SRV --> LAKE[("DuckLake<br/>DuckDB + Quack catalog<br/>+ Parquet on object storage")]
   LAKE --> READ["Reads: DuckDB / DuckDB-WASM<br/>over Quack"]
 ```

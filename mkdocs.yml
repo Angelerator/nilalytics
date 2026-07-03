@@ -34,6 +34,7 @@ nav:
   - Guides:
       - Web (Grafana Faro): web.md
       - Mobile (OpenTelemetry): mobile.md
+      - Backend (server-side): backend.md
       - Identity & cross-device: identity.md
       - Querying: querying.md
       - Maintenance: maintenance.md

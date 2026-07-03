@@ -9,6 +9,7 @@ flowchart LR
   IOS["iOS · OTel"] -->|OTLP| GW
   AND["Android · OTel"] -->|OTLP| GW
   GW["Ingest Gateway :4319<br/>CORS · short-lived tokens · TLS"] --> SRV["OTLP server :4318<br/>(duckdb-otlp, single writer)"]
+  BE["Backend services · OTel"] -->|OTLP (private net)| SRV
   SRV --> LAKE[("DuckLake<br/>hot: inlined rows in catalog<br/>cold: Parquet on object storage<br/>(S3/GCS/R2/Azure)")]
   LAKE --> QUACK["Quack :9494"]
   QUACK --> READ["DuckDB / DuckDB-WASM<br/>dashboards, funnels, errors, traces"]
@@ -17,8 +18,10 @@ flowchart LR
 ## The pieces
 
 **Emitter (client).** Any OTLP producer. On the web that's **Grafana Faro** (via
-its OTLP transport); on mobile it's an **OpenTelemetry SDK**. Everything becomes
-OTLP logs (events + errors), spans (performance), and metrics.
+its OTLP transport); on mobile it's an **OpenTelemetry SDK**; your **backend
+services** use an OTel SDK too and post OTLP directly to the server on the
+private network. Everything becomes OTLP logs (events + errors), spans
+(performance), and metrics. See [Backend activity](backend.md).
 
 **Ingest gateway.** The public front door. It adds CORS (so browsers can post),
 verifies **short‑lived tokens** (so no long‑lived secret ships in a client),
