@@ -21,16 +21,13 @@ No data warehouse. No per‑event fees. No data leaving your infrastructure.
 
 ## How it fits together
 
-```
- Web (Grafana Faro) / Mobile (OpenTelemetry)
-        │  OTLP + short-lived token
-        ▼
-   Ingest Gateway ──► OTLP server (duckdb-otlp) ──► DuckLake
-   (CORS · tokens · TLS)                            (DuckDB + Quack catalog
-                                                     + Parquet on object storage)
-                                                          │
-                                                          ▼
-                              Reads: DuckDB / DuckDB-WASM over Quack
+```mermaid
+flowchart LR
+  W["Web · Grafana Faro"] -->|OTLP + token| GW
+  M["Mobile · OpenTelemetry"] -->|OTLP + token| GW
+  GW["Ingest Gateway<br/>CORS · tokens · TLS"] --> SRV["OTLP server<br/>(duckdb-otlp)"]
+  SRV --> LAKE[("DuckLake<br/>DuckDB + Quack catalog<br/>+ Parquet on object storage")]
+  LAKE --> READ["Reads: DuckDB / DuckDB-WASM<br/>over Quack"]
 ```
 
 ## Where to go next

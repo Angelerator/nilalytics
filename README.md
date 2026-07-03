@@ -40,18 +40,13 @@ nilalytics query report
 
 ## Architecture
 
-```
- Web (Faro) / Mobile (OTel)
-        │  OTLP + short-lived token
-        ▼
-   Ingest Gateway ── CORS · tokens · TLS ──► OTLP server (duckdb-otlp)
-        (public)                                   │
-                                                    ▼
-                              DuckLake  ── DuckDB + Quack catalog
-                                          + Parquet on object storage
-                                                    │
-                                                    ▼
-                              Reads: DuckDB / DuckDB-WASM over Quack
+```mermaid
+flowchart LR
+  W["Web · Grafana Faro"] -->|OTLP + token| GW
+  M["Mobile · OpenTelemetry"] -->|OTLP + token| GW
+  GW["Ingest Gateway<br/>CORS · tokens · TLS"] --> SRV["OTLP server<br/>(duckdb-otlp)"]
+  SRV --> LAKE[("DuckLake<br/>DuckDB + Quack catalog<br/>+ Parquet on object storage")]
+  LAKE --> READ["Reads: DuckDB / DuckDB-WASM<br/>over Quack"]
 ```
 
 ## License

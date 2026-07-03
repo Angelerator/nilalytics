@@ -5,13 +5,11 @@ process + one **gateway** process (+ a periodic maintenance job).
 
 ## Topology
 
-```
-  Internet ──TLS──▶  Gateway (0.0.0.0:443)  ──▶  Server (localhost)
-                     CORS · tokens                • OTLP :4318
-                                                  • Quack :9494
-                                                        │
-                                                        ▼
-                                              Object storage (S3/GCS/R2/Azure)
+```mermaid
+flowchart TB
+  Net(["Internet"]) -->|TLS| GW["Gateway 0.0.0.0:443<br/>CORS · tokens"]
+  GW --> SRV["Server (localhost)<br/>OTLP :4318 · Quack :9494"]
+  SRV --> OBJ[("Object storage<br/>S3 / GCS / R2 / Azure")]
 ```
 
 - Expose **only the gateway**. Keep the OTLP server and Quack catalog on localhost.

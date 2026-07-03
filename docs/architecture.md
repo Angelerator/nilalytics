@@ -3,16 +3,15 @@
 nilalytics is a thin pipeline over proven pieces: OpenTelemetry for collection,
 DuckLake for storage, DuckDB for compute, and Quack for serving.
 
-```
- CLIENTS                     INGEST                     STORE                      SERVE
- ───────────────────         ───────────────────        ────────────────────────   ─────────────────────────
- Web  → Grafana Faro   ┐     Ingest Gateway (:4319)     DuckLake                    Live (sub-second):
- iOS  → OTel Swift     ├─OTLP▶ CORS · short-lived      • DuckDB + Quack catalog     DuckDB / DuckDB-WASM
- Andr → OTel Kotlin    │      tokens · TLS              • recent events INLINED      over Quack (:9494)
- Any  → OTLP HTTP      ┘         │                        (hot, in catalog)
-                                 ▼                       • older data → Parquet      Analyze:
-                        OTLP server (duckdb-otlp,          on object storage         funnels, retention,
-                        :4318, single writer)              (S3/GCS/R2/Azure)         errors, traces, metrics
+```mermaid
+flowchart LR
+  W["Web · Grafana Faro"] -->|OTLP| GW
+  IOS["iOS · OTel"] -->|OTLP| GW
+  AND["Android · OTel"] -->|OTLP| GW
+  GW["Ingest Gateway :4319<br/>CORS · short-lived tokens · TLS"] --> SRV["OTLP server :4318<br/>(duckdb-otlp, single writer)"]
+  SRV --> LAKE[("DuckLake<br/>hot: inlined rows in catalog<br/>cold: Parquet on object storage<br/>(S3/GCS/R2/Azure)")]
+  LAKE --> QUACK["Quack :9494"]
+  QUACK --> READ["DuckDB / DuckDB-WASM<br/>dashboards, funnels, errors, traces"]
 ```
 
 ## The pieces

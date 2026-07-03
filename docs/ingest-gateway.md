@@ -33,9 +33,18 @@ nilalytics gateway
 
 ## Token flow
 
-```
-app  ──POST /v1/token (x-ingest-key)──▶  gateway  ──▶  { token, expires_in: 900 }
-app  ──POST /v1/logs (Bearer token)───▶  gateway  ──verify + forward with internal token──▶  OTLP server
+```mermaid
+sequenceDiagram
+    participant App
+    participant Gateway
+    participant OTLP as OTLP server
+    App->>Gateway: POST /v1/token (x-ingest-key)
+    Gateway-->>App: { token, expires_in: 900 }
+    App->>Gateway: POST /v1/logs (Bearer token)
+    Gateway->>Gateway: verify signature + expiry
+    Gateway->>OTLP: forward with internal token
+    OTLP-->>Gateway: 202
+    Gateway-->>App: 202
 ```
 
 - The **ingest key** (`NILA_INGEST_KEY`) is the only value a client ships. It

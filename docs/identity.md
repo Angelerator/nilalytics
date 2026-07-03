@@ -35,9 +35,11 @@ When a device learns the user, it emits an `identify` event linking that
 device's `anonymous.id` to the hashed `user.id`. That single event is what makes
 cross‑device stitching possible.
 
-```
-phone   anonymous.id=A1 ──identify──▶ user.id = hash(email)
-laptop  anonymous.id=B7 ──identify──▶ user.id = hash(email)   ← same hash → same person
+```mermaid
+flowchart LR
+  P["phone<br/>anonymous.id = A1"] -->|identify| U(("user.id<br/>= hash(email)"))
+  L["laptop<br/>anonymous.id = B7"] -->|identify| U
+  U --> S["same hash → same person"]
 ```
 
 ## Stitching
