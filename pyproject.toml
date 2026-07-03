@@ -2,7 +2,35 @@
 name = "nilalytics"
 version = "0.1.0"
 description = "Serverless realtime analytics: OTLP events -> DuckLake on object storage (S3/GCS/R2/Azure), served over Quack."
+readme = "README.md"
 requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Angelerator" }]
+keywords = [
+    "analytics",
+    "product-analytics",
+    "web-analytics",
+    "mobile-analytics",
+    "opentelemetry",
+    "otlp",
+    "duckdb",
+    "ducklake",
+    "lakehouse",
+    "observability",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Monitoring",
+    "Topic :: Internet :: Log Analysis",
+]
 dependencies = [
     "duckdb>=1.5.3",   # analytical engine + ducklake/quack/otlp/httpfs/azure extensions
     "requests>=2.31",  # HTTP for the emitter and the gateway's forwarding
@@ -14,6 +42,12 @@ docs = ["mkdocs-material>=9"]  # build the documentation site
 
 [project.scripts]
 nilalytics = "nilalytics.cli:main"
+
+[project.urls]
+Homepage = "https://angelerator.github.io/nilalytics/"
+Documentation = "https://angelerator.github.io/nilalytics/"
+Repository = "https://github.com/Angelerator/nilalytics"
+Issues = "https://github.com/Angelerator/nilalytics/issues"
 
 [build-system]
 requires = ["hatchling"]
