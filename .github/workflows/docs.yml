@@ -16,8 +16,10 @@ permissions:
   id-token: write
 
 concurrency:
+  # Never cancel an in-progress Pages deployment — doing so corrupts the
+  # deployment state and causes "Deployment failed, try again later".
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
