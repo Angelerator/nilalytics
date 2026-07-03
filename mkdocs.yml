@@ -1,0 +1,62 @@
+site_name: nilalytics
+site_description: Serverless realtime web & mobile analytics on DuckLake + object storage.
+site_url: https://angelerator.github.io/nilalytics/
+repo_url: https://github.com/Angelerator/nilalytics
+repo_name: Angelerator/nilalytics
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - search.suggest
+  palette:
+    - scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - Install: install.md
+  - Quickstart: quickstart.md
+  - Guides:
+      - Web (Grafana Faro): web.md
+      - Mobile (OpenTelemetry): mobile.md
+      - Identity & cross-device: identity.md
+      - Querying: querying.md
+      - Maintenance: maintenance.md
+  - Reference:
+      - Configuration: configuration.md
+      - Storage backends: storage-backends.md
+      - Ingest gateway: ingest-gateway.md
+      - CLI: cli.md
+      - Security: security.md
+      - Deployment: deployment.md
+
+markdown_extensions:
+  - admonition
+  - tables
+  - attr_list
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Angelerator/nilalytics

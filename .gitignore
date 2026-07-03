@@ -1,0 +1,13 @@
+# runtime data + artifacts (never commit)
+.venv/
+data/
+.minio-data/
+*.ducklake
+*.ducklake.wal
+__pycache__/
+*.pyc
+
+# build + docs site output
+dist/
+site/
+*.egg-info/
