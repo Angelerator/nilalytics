@@ -4,10 +4,13 @@ version = "0.1.0"
 description = "Serverless realtime analytics: OTLP events -> DuckLake on object storage (S3/GCS/R2/Azure), served over Quack."
 requires-python = ">=3.11"
 dependencies = [
-    "duckdb>=1.5.3",
-    "requests>=2.31",
-    "pytz>=2024.1",
+    "duckdb>=1.5.3",   # analytical engine + ducklake/quack/otlp/httpfs/azure extensions
+    "requests>=2.31",  # HTTP for the emitter and the gateway's forwarding
+    "pytz>=2024.1",    # timezone support for time-travel queries
 ]
+
+[project.optional-dependencies]
+docs = ["mkdocs-material>=9"]  # build the documentation site
 
 [project.scripts]
 nilalytics = "nilalytics.cli:main"

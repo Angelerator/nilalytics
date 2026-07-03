@@ -49,6 +49,21 @@ flowchart LR
   LAKE --> READ["Reads: DuckDB / DuckDB-WASM<br/>over Quack"]
 ```
 
+## Acknowledgements
+
+nilalytics stands on the shoulders of giants. Huge thanks to
+[DuckDB](https://duckdb.org/), [DuckLake](https://ducklake.select/) and Quack (DuckDB Labs / DuckDB Foundation),
+[duckdb‑otlp](https://github.com/smithclay/duckdb-otlp) ([@smithclay](https://github.com/smithclay)),
+[OpenTelemetry](https://opentelemetry.io/) (CNCF),
+[Grafana Faro](https://github.com/grafana/faro-web-sdk) (Grafana Labs),
+and [MinIO](https://min.io/) — plus the projects that inspired it:
+[canardstack](https://github.com/smithclay/canardstack),
+[icelight](https://github.com/cliftonc/icelight), and
+[stratif.io](https://stratif.io/).
+
+Full credits and dependency list: [Acknowledgements](https://angelerator.github.io/nilalytics/acknowledgements/).
+
 ## License
 
 [Apache‑2.0](LICENSE) © Angelerator
+

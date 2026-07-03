@@ -44,6 +44,7 @@ nav:
       - CLI: cli.md
       - Security: security.md
       - Deployment: deployment.md
+  - Acknowledgements: acknowledgements.md
 
 markdown_extensions:
   - admonition
