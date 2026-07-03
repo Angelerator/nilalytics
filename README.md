@@ -1,6 +1,11 @@
 # nilalytics
 
-**Serverless, self‑hosted realtime analytics for web and mobile — on your own object storage.**
+[![PyPI](https://img.shields.io/pypi/v/nilalytics)](https://pypi.org/project/nilalytics/)
+[![Python](https://img.shields.io/pypi/pyversions/nilalytics)](https://pypi.org/project/nilalytics/)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-angelerator.github.io-14b8a6)](https://angelerator.github.io/nilalytics/)
+
+**The batteries‑included, OpenTelemetry‑native way to run your own web & mobile product analytics — on a DuckLake in your object storage.**
 
 nilalytics collects product events, errors, and performance data over
 [OpenTelemetry](https://opentelemetry.io/) (OTLP), stores them in a
@@ -18,8 +23,11 @@ storage, and serves sub‑second reads over DuckDB's [Quack](https://duckdb.org/
 ## Install
 
 ```bash
-pip install git+https://github.com/Angelerator/nilalytics
+pip install nilalytics
 ```
+
+> Also works with `pipx install nilalytics` or `uv tool install nilalytics`.
+> Bleeding edge from source: `pip install git+https://github.com/Angelerator/nilalytics`.
 
 ## 60‑second local demo
 
