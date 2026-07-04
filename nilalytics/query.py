@@ -7,7 +7,7 @@ server where the DuckLake is attached.
 
 Run it:  uv run python -m nilalytics.query report
          uv run python -m nilalytics.query user_events
-         uv run python -m nilalytics.query user <person_id>
+         uv run python -m nilalytics.query user <person_id> [days]
          uv run python -m nilalytics.query schema
          uv run python -m nilalytics.query flush
 """
@@ -259,20 +259,43 @@ def user_events(con: duckdb.DuckDBPyConnection) -> None:
         print(f"  {(pid or '-')[:24]:<24} {n:>5} events  last={last}")
 
 
-def user(con: duckdb.DuckDBPyConnection, pid: str) -> None:
-    """Recent activity for one subject (the input a recommender consumes)."""
+_USER_LIST_CAP = 500  # safety cap on printed rows
+
+
+def user(con: duckdb.DuckDBPyConnection, pid: str, days: int | None = None) -> None:
+    """All activity + logs for one subject, optionally within the last N days.
+
+    This is the recommendation input and the "everything this user did" audit view.
+    """
     lake, tbl = config.LAKE, config.USER_EVENTS_TABLE
-    print(f"recent activity for person {pid[:32]}:")
-    rows = rq(
-        con,
-        f"SELECT event_time, event, page, session_id FROM {lake}.main.{tbl} "
-        f"WHERE person_id = '{pid}' ORDER BY event_time_unix_nano DESC LIMIT 25",
-    ).fetchall()
-    if not rows:
+    where = f"person_id = '{pid}'"
+    window = ""
+    if days:
+        where += f" AND event_time > now() - INTERVAL '{int(days)} days'"
+        window = f" in the last {int(days)} days"
+
+    total = rq(con, f"SELECT count(*) FROM {lake}.main.{tbl} WHERE {where}").fetchone()[0]
+    print(f"person {pid[:32]}: {total} events{window}")
+    if not total:
         print("  (no events; pass a person_id from `nilalytics query user_events`)")
         return
-    for t, ev, page, sess in rows:
-        print(f"  {t}  {ev:<16} {page or '':<12} sess:{(sess or '')[:8]}")
+
+    print("\nby event type:")
+    for ev, n in rq(
+        con, f"SELECT event, count(*) c FROM {lake}.main.{tbl} WHERE {where} GROUP BY 1 ORDER BY c DESC"
+    ).fetchall():
+        print(f"  {ev:<18} {n}")
+
+    print("\ntimeline (newest first):")
+    rows = rq(
+        con,
+        f"SELECT event_time, event, page, severity_text, session_id FROM {lake}.main.{tbl} "
+        f"WHERE {where} ORDER BY event_time_unix_nano DESC LIMIT {_USER_LIST_CAP}",
+    ).fetchall()
+    for t, ev, page, sev, sess in rows:
+        print(f"  {t}  {ev:<16} {sev or '':<5} {page or '':<12} sess:{(sess or '')[:8]}")
+    if total > len(rows):
+        print(f"  ... ({total - len(rows)} more; narrow the window or use SQL)")
 
 
 def main(argv=None) -> None:
@@ -311,9 +334,10 @@ def main(argv=None) -> None:
         elif cmd == "user":
             flush(con)
             if len(argv) > 1:
-                user(con, argv[1])
+                days = int(argv[2]) if len(argv) > 2 else None
+                user(con, argv[1], days)
             else:
-                print("usage: nilalytics query user <person_id>")
+                print("usage: nilalytics query user <person_id> [days]")
         elif cmd == "asof":
             flush(con)
             asof(con, argv[1] if len(argv) > 1 else "1 hour")

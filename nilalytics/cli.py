@@ -7,7 +7,7 @@ After installing the package (``pip install nilalytics`` / ``uv sync``), the
     nilalytics gateway                # public ingest gateway (CORS, tokens, TLS)
     nilalytics emit --persons 5       # send sample events
     nilalytics query report           # analytics report over Quack
-    nilalytics query user <id>        # one person's activity (recommendation input)
+    nilalytics query user <id> 16     # one person's activity + logs, last 16 days
     nilalytics maintenance --expire   # flush inlined data + compact
 
 Each subcommand delegates to its module, which is also runnable directly via
@@ -24,7 +24,7 @@ commands:
   server                      run the ingest + Quack catalog server
   gateway                     run the public ingest gateway (CORS, short-lived tokens, TLS)
   emit [options]              send sample logs/traces/metrics (--persons for cross-device)
-  query [subcommand] [args]   report | user_events | user <id> | traces | metrics | stitch | asof | changes | snapshots | errors
+  query [subcommand] [args]   report | user_events | user <id> [days] | traces | metrics | stitch | asof | changes | snapshots | errors
   maintenance [--expire]      flush inlined data to Parquet + compact
 """
 

@@ -78,6 +78,21 @@ The server keeps a curated per‑user table for recommendations / ML — see
 | `NILA_USER_EVENTS_PARTITION_BY` | `day(event_time)` | Partition (keep **low‑cardinality**) |
 | `NILA_USER_EVENTS_SORTED_BY` | `person_id, event_time_unix_nano` | Cluster by person for fast per‑user reads |
 
+## Data retention
+
+Delete **event rows** older than a cutoff so storage stays bounded (opt‑in) — see
+[Maintenance → Data retention](maintenance.md#data-retention-dont-grow-forever).
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NILA_RETENTION_DAYS` | `0` (off) | Delete events older than N days from every event table |
+| `NILA_RETENTION_INTERVAL_SECONDS` | `3600` | How often the server runs the retention sweep |
+
+!!! warning "Two different retentions"
+    `NILA_RETENTION_DAYS` drops **event rows** (the data). `NILA_RETENTION_MS`
+    (under *Tuning*) drops **snapshots / old files** (time‑travel history). They are
+    independent.
+
 ## Read path (Quack)
 
 | Variable | Default | Description |

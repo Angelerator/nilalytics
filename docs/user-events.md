@@ -74,20 +74,21 @@ safely written.
 ## Use it
 
 ```bash
-nilalytics query user_events       # size, distinct persons, top activity, curation lag
-nilalytics query user <person_id>  # one person's recent activity
+nilalytics query user_events          # size, distinct persons, top activity, curation lag
+nilalytics query user <person_id>     # one person's full activity + logs
+nilalytics query user <person_id> 16  # same, limited to the last 16 days
 ```
 
 Any SQL client (or DuckDB‑WASM) can read it over Quack:
 
 ```sql
--- a person's recent history (the recommender's input)
+-- a person's activity + logs in the last 16 days (the recommender's input)
 FROM remote.query('
-  SELECT event_time, event, page
+  SELECT event_time, event, severity_text, page
   FROM lake.main.user_events
   WHERE person_id = ''<person-id>''
+    AND event_time > now() - INTERVAL ''16 days''
   ORDER BY event_time_unix_nano DESC
-  LIMIT 50
 ');
 ```
 
@@ -116,3 +117,7 @@ NILA_USER_EVENTS_SORTED_BY="person_id, event_time_unix_nano"
 ```
 
 Set `NILA_USER_EVENTS=false` to turn curation off entirely.
+
+To keep the table (and the raw tables) from growing forever, enable
+[data retention](maintenance.md#data-retention-dont-grow-forever)
+(`NILA_RETENTION_DAYS`) — the sweep drops old rows from `user_events` too.

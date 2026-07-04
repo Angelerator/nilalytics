@@ -147,6 +147,15 @@ USER_EVENTS_REFRESH_SECONDS = int(os.getenv("NILA_USER_EVENTS_REFRESH_SECONDS", 
 USER_EVENTS_PARTITION_BY = os.getenv("NILA_USER_EVENTS_PARTITION_BY", "day(event_time)")
 USER_EVENTS_SORTED_BY = os.getenv("NILA_USER_EVENTS_SORTED_BY", "person_id, event_time_unix_nano")
 
+# --- Data retention (drop events older than N days so storage stays bounded) ---
+# NOTE: this is EVENT/ROW retention -- it deletes old rows from the event tables.
+# It is different from NILA_RETENTION_MS above, which controls how long DuckLake
+# keeps SNAPSHOTS/old files (time-travel history) before they are reclaimed.
+# Deleting data is destructive, so row retention is strictly OPT-IN: 0 = disabled.
+RETENTION_DAYS = int(os.getenv("NILA_RETENTION_DAYS", "0"))
+# How often the server runs the retention sweep (seconds).
+RETENTION_INTERVAL_SECONDS = int(os.getenv("NILA_RETENTION_INTERVAL_SECONDS", "3600"))
+
 # --- Safety guardrails ---
 _LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1", "[::1]"}
 

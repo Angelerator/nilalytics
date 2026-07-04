@@ -20,7 +20,7 @@ import time
 
 import duckdb
 
-from . import config, curate, storage
+from . import config, curate, retention, storage
 
 
 def _install_quack_authz(con: duckdb.DuckDBPyConnection) -> None:
@@ -121,6 +121,17 @@ def _curate(con: duckdb.DuckDBPyConnection) -> None:
         print(f"[nilalytics] user_events refresh warning: {exc}", flush=True)
 
 
+def _retain(con: duckdb.DuckDBPyConnection) -> None:
+    """Best-effort data-retention sweep (drops events older than the cutoff)."""
+    try:
+        deleted = retention.sweep(con)
+        if deleted:
+            summary = ", ".join(f"{t} -{n}" for t, n in deleted.items())
+            print(f"[nilalytics] retention deleted: {summary}", flush=True)
+    except Exception as exc:  # noqa: BLE001 - non-fatal; retried next sweep
+        print(f"[nilalytics] retention warning: {exc}", flush=True)
+
+
 def main(argv=None) -> None:  # argv accepted for CLI compatibility (unused)
     config.assert_safe()
     con = build_connection()
@@ -138,6 +149,8 @@ def main(argv=None) -> None:  # argv accepted for CLI compatibility (unused)
     print(f"[nilalytics] secrets file:         {config._SECRETS_FILE}", flush=True)
     if config.USER_EVENTS_ENABLED:
         print(f"[nilalytics] curating:            {config.USER_EVENTS_TABLE} every {config.USER_EVENTS_REFRESH_SECONDS}s", flush=True)
+    if config.RETENTION_DAYS > 0:
+        print(f"[nilalytics] retention:           deleting events older than {config.RETENTION_DAYS}d every {config.RETENTION_INTERVAL_SECONDS}s", flush=True)
     print("[nilalytics] READY", flush=True)
 
     stop = {"flag": False}
@@ -149,12 +162,17 @@ def main(argv=None) -> None:  # argv accepted for CLI compatibility (unused)
     signal.signal(signal.SIGTERM, _handle)
 
     last_curate = 0.0  # 0 -> first tick backfills the curated table immediately
+    last_retain = time.monotonic()  # wait one full interval before first sweep
     try:
         while not stop["flag"]:
             time.sleep(0.5)
-            if config.USER_EVENTS_ENABLED and (time.monotonic() - last_curate) >= config.USER_EVENTS_REFRESH_SECONDS:
-                last_curate = time.monotonic()
+            now = time.monotonic()
+            if config.USER_EVENTS_ENABLED and (now - last_curate) >= config.USER_EVENTS_REFRESH_SECONDS:
+                last_curate = now
                 _curate(con)
+            if config.RETENTION_DAYS > 0 and (now - last_retain) >= config.RETENTION_INTERVAL_SECONDS:
+                last_retain = now
+                _retain(con)
     finally:
         # Commit buffered rows and release ports.
         try:
