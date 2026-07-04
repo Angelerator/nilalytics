@@ -13,6 +13,7 @@ The ingest server runs **best‑effort compaction** after commits (a bounded
 ```bash
 nilalytics maintenance            # safe: flush inlined rows -> Parquet + merge small files
 nilalytics maintenance --expire   # also expire old snapshots + delete unused files (destructive)
+nilalytics maintenance --retention-dry-run --days 90   # preview what retention would delete (read-only)
 ```
 
 - **flush** — `ducklake_flush_inlined_data`: move inlined rows into Parquet on object storage.
@@ -54,10 +55,24 @@ NILA_RETENTION_INTERVAL_SECONDS=3600 # sweep hourly (default)
    the snapshots expire** — automatically within `NILA_RETENTION_MS`, or on demand
    with `nilalytics maintenance --expire`.
 
+**Preview first (recommended).** Before enabling retention, see exactly what it
+would remove — this is **read‑only** and deletes nothing:
+
+```bash
+nilalytics maintenance --retention-dry-run --days 90
+# retention dry-run: rows older than 90 days (nothing is deleted)
+#   otlp_logs              12043
+#   user_events            11890
+#   total rows that would be deleted: 23933
+```
+
+(Omit `--days` to preview the configured `NILA_RETENTION_DAYS`.)
+
 !!! warning "Destructive + opt‑in"
     Event retention permanently deletes data, so it is **off by default**. It
     deletes by day, at the cold end of the table, so it doesn't fight the hot
-    writes the ingest server is doing.
+    writes the ingest server is doing. The actual deletion runs **inside the
+    server** (the single writer); the dry‑run above runs over the read‑only path.
 
 ## Retention & freshness knobs
 

@@ -47,7 +47,21 @@ def _cutoff_ns(days: int) -> int:
     return int((time.time() - days * 86_400) * 1_000_000_000)
 
 
-def _existing_tables(con: duckdb.DuckDBPyConnection) -> set[str]:
+def plan(days: int | None = None) -> list[tuple[str, str, int]]:
+    """The retention plan: [(table, time_column, cutoff_ns)].
+
+    Both the server-side sweep and the read-only dry-run preview build from this,
+    so "what gets deleted" is defined in exactly one place. A non-positive window
+    (the default when retention is disabled) yields an empty plan.
+    """
+    days = config.RETENTION_DAYS if days is None else days
+    if not days or days <= 0:
+        return []
+    cutoff = _cutoff_ns(days)
+    return [(tbl, col, cutoff) for tbl, col in _TABLES]
+
+
+def existing_tables(con: duckdb.DuckDBPyConnection) -> set[str]:
     """Tables that actually exist in the lake's main schema (varies per deployment)."""
     rows = con.execute(
         "SELECT table_name FROM information_schema.tables "
@@ -63,14 +77,13 @@ def sweep(con: duckdb.DuckDBPyConnection, days: int | None = None) -> dict[str, 
     unconditionally from the server loop. Tables absent in this deployment are
     skipped silently; a real error (e.g. a schema mismatch) is logged.
     """
-    days = config.RETENTION_DAYS if days is None else days
-    if not days or days <= 0:
+    items = plan(days)
+    if not items:
         return {}
 
-    cutoff = _cutoff_ns(days)
-    present = _existing_tables(con)
+    present = existing_tables(con)
     deleted: dict[str, int] = {}
-    for tbl, col in _TABLES:
+    for tbl, col, cutoff in items:
         if tbl not in present:
             continue
         try:
