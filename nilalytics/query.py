@@ -6,6 +6,8 @@ Quack server and ships SQL to it via ``remote.query(...)``, which runs on the
 server where the DuckLake is attached.
 
 Run it:  uv run python -m nilalytics.query report
+         uv run python -m nilalytics.query user_events
+         uv run python -m nilalytics.query user <person_id>
          uv run python -m nilalytics.query schema
          uv run python -m nilalytics.query flush
 """
@@ -223,6 +225,56 @@ def stitch(con: duckdb.DuckDBPyConnection) -> None:
         print(f"  {uid[:16]}...  {ev} events across devices")
 
 
+def user_events(con: duckdb.DuckDBPyConnection) -> None:
+    """Status of the curated per-user table (the recommendation feature store)."""
+    lake, tbl = config.LAKE, config.USER_EVENTS_TABLE
+    try:
+        total = rq(con, f"SELECT count(*) FROM {lake}.main.{tbl}").fetchone()[0]
+    except duckdb.Error:
+        print(f"no curated table yet ({tbl}); is the server running with NILA_USER_EVENTS=true?")
+        return
+    persons = rq(con, f"SELECT count(DISTINCT person_id) FROM {lake}.main.{tbl}").fetchone()[0]
+    identified = rq(
+        con, f"SELECT count(DISTINCT user_id) FROM {lake}.main.{tbl} WHERE user_id IS NOT NULL"
+    ).fetchone()[0]
+    print(f"curated rows:       {total}")
+    print(f"distinct persons:   {persons}")
+    print(f"identified users:   {identified}")
+
+    # Curation lag: newest raw event vs newest curated event.
+    lag_ns = rq(
+        con,
+        f"SELECT (SELECT max(time_unix_nano) FROM {lake}.main.otlp_logs) "
+        f"- (SELECT max(event_time_unix_nano) FROM {lake}.main.{tbl})",
+    ).fetchone()[0]
+    if lag_ns is not None:
+        print(f"curation lag:       {lag_ns / 1e9:.1f}s behind newest event")
+
+    print("\ntop persons by activity:")
+    for pid, n, last in rq(
+        con,
+        f"SELECT person_id, count(*) c, max(event_time) FROM {lake}.main.{tbl} "
+        "GROUP BY 1 ORDER BY c DESC LIMIT 10",
+    ).fetchall():
+        print(f"  {(pid or '-')[:24]:<24} {n:>5} events  last={last}")
+
+
+def user(con: duckdb.DuckDBPyConnection, pid: str) -> None:
+    """Recent activity for one subject (the input a recommender consumes)."""
+    lake, tbl = config.LAKE, config.USER_EVENTS_TABLE
+    print(f"recent activity for person {pid[:32]}:")
+    rows = rq(
+        con,
+        f"SELECT event_time, event, page, session_id FROM {lake}.main.{tbl} "
+        f"WHERE person_id = '{pid}' ORDER BY event_time_unix_nano DESC LIMIT 25",
+    ).fetchall()
+    if not rows:
+        print("  (no events; pass a person_id from `nilalytics query user_events`)")
+        return
+    for t, ev, page, sess in rows:
+        print(f"  {t}  {ev:<16} {page or '':<12} sess:{(sess or '')[:8]}")
+
+
 def main(argv=None) -> None:
     argv = list(sys.argv[1:] if argv is None else argv)
     cmd = argv[0] if argv else "report"
@@ -253,6 +305,15 @@ def main(argv=None) -> None:
         elif cmd == "stitch":
             flush(con)
             stitch(con)
+        elif cmd == "user_events":
+            flush(con)
+            user_events(con)
+        elif cmd == "user":
+            flush(con)
+            if len(argv) > 1:
+                user(con, argv[1])
+            else:
+                print("usage: nilalytics query user <person_id>")
         elif cmd == "asof":
             flush(con)
             asof(con, argv[1] if len(argv) > 1 else "1 hour")

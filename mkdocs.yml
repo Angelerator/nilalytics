@@ -36,6 +36,7 @@ nav:
       - Mobile (OpenTelemetry): mobile.md
       - Backend (server-side): backend.md
       - Identity & cross-device: identity.md
+      - User events (recommendations): user-events.md
       - Querying: querying.md
       - Maintenance: maintenance.md
   - Reference:

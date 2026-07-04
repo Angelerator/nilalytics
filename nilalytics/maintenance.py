@@ -42,6 +42,14 @@ def run(con, expire: bool = False) -> None:
     total = rq(con, "SELECT count(*) FROM lake.main.otlp_logs").fetchone()[0]
     print(f"rows after maintenance: {total}")
 
+    # The curated user_events table is compacted by the same flush/merge above
+    # (they operate on the whole lake); report its size for visibility.
+    try:
+        curated = rq(con, f"SELECT count(*) FROM lake.main.{config.USER_EVENTS_TABLE}").fetchone()[0]
+        print(f"curated {config.USER_EVENTS_TABLE} rows: {curated}")
+    except Exception:  # noqa: BLE001 - table absent if curation is disabled
+        pass
+
 
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(prog="nilalytics maintenance",

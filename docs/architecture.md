@@ -61,6 +61,15 @@ Queries transparently combine both.
 | performance (page load, API) | traces | `otlp_traces` |
 | web‑vitals, counters | metrics | `otlp_metrics_*` |
 
+## Curated tables
+
+`otlp_logs` is tuned for ingest (date‑partitioned, identity in JSON). For
+per‑user reads — the core of recommendations — the server also maintains a
+curated **`user_events`** table: identity lifted into typed columns, partitioned
+by day and **sorted by `person_id`** so one user's history prunes to a few files.
+It refreshes incrementally from the DuckLake change feed. See
+[User events](user-events.md).
+
 ## Processes you run
 
 - `nilalytics server` — the OTLP server + Quack catalog.

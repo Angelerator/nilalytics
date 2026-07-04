@@ -16,6 +16,7 @@ No data warehouse. No per‑event fees. No data leaving your infrastructure.
 - **Runs on any cloud.** S3, MinIO, Google Cloud Storage, Cloudflare R2, or Azure / ADLS Gen2 — switch with one env var.
 - **No small‑files problem.** DuckLake *data inlining* keeps recent events in the catalog (hot) and flushes older data to Parquet (cold), so streaming stays fast and cheap.
 - **Product analytics built in.** Funnels, retention, user paths, errors, traces, metrics.
+- **Recommendation‑ready.** A curated, per‑user [`user_events`](user-events.md) table — typed columns, clustered by person — makes "one user's history" a fast read for ML/recommendations.
 - **Cross‑device identity.** Stitch a person across phone + web, pseudonymously.
 - **Secure by default.** Token‑authenticated ingest, read‑only query authorization, and a hardened public gateway with short‑lived tokens, CORS, and optional TLS.
 

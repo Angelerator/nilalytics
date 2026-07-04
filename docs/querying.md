@@ -8,6 +8,8 @@ read‑only policy (see [Security](security.md)).
 
 ```bash
 nilalytics query report      # totals, funnel, errors, devices, identified persons, latency
+nilalytics query user_events # curated per-user table: size, persons, top activity, lag
+nilalytics query user <id>   # one person's recent activity (recommendation input)
 nilalytics query traces      # recent spans + p95 latency per span
 nilalytics query metrics     # metric names, counts, averages (e.g. web-vitals)
 nilalytics query errors      # recent errors (type, message, service)
@@ -58,6 +60,22 @@ FROM remote.query('
 ```
 
 See [Backend activity](backend.md) for instrumenting and tying spans to the user.
+
+## Per‑user reads (recommendations)
+
+The curated `user_events` table has typed columns and is **sorted by `person_id`**,
+so pulling one person's history prunes to a few files. See [User events](user-events.md).
+
+```sql
+-- one person's recent activity, newest first
+FROM remote.query('
+  SELECT event_time, event, page
+  FROM lake.main.user_events
+  WHERE person_id = ''<person-id>''
+  ORDER BY event_time_unix_nano DESC
+  LIMIT 50
+');
+```
 
 ## Handy columns
 

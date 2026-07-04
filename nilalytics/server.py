@@ -20,7 +20,7 @@ import time
 
 import duckdb
 
-from . import config, storage
+from . import config, curate, storage
 
 
 def _install_quack_authz(con: duckdb.DuckDBPyConnection) -> None:
@@ -111,15 +111,33 @@ def start_servers(con: duckdb.DuckDBPyConnection) -> str:
     return otlp_url
 
 
+def _curate(con: duckdb.DuckDBPyConnection) -> None:
+    """Best-effort incremental refresh of the curated user_events table."""
+    try:
+        n = curate.refresh(con)
+        if n:
+            print(f"[nilalytics] user_events += {n} rows", flush=True)
+    except Exception as exc:  # noqa: BLE001 - non-fatal; retried next tick
+        print(f"[nilalytics] user_events refresh warning: {exc}", flush=True)
+
+
 def main(argv=None) -> None:  # argv accepted for CLI compatibility (unused)
     config.assert_safe()
     con = build_connection()
     otlp_url = start_servers(con)
 
+    if config.USER_EVENTS_ENABLED:
+        try:
+            curate.ensure(con)
+        except Exception as exc:  # noqa: BLE001 - non-fatal; server still ingests
+            print(f"[nilalytics] user_events init warning: {exc}", flush=True)
+
     print(f"[nilalytics] OTLP ingest ready:  {otlp_url}/v1/logs (auth: Bearer token required)", flush=True)
     print(f"[nilalytics] Quack catalog ready: {config.QUACK_URI} (token required)", flush=True)
     print(f"[nilalytics] storage backend:     {config.STORAGE} -> {storage.data_path()}", flush=True)
     print(f"[nilalytics] secrets file:         {config._SECRETS_FILE}", flush=True)
+    if config.USER_EVENTS_ENABLED:
+        print(f"[nilalytics] curating:            {config.USER_EVENTS_TABLE} every {config.USER_EVENTS_REFRESH_SECONDS}s", flush=True)
     print("[nilalytics] READY", flush=True)
 
     stop = {"flag": False}
@@ -130,15 +148,22 @@ def main(argv=None) -> None:  # argv accepted for CLI compatibility (unused)
     signal.signal(signal.SIGINT, _handle)
     signal.signal(signal.SIGTERM, _handle)
 
+    last_curate = 0.0  # 0 -> first tick backfills the curated table immediately
     try:
         while not stop["flag"]:
             time.sleep(0.5)
+            if config.USER_EVENTS_ENABLED and (time.monotonic() - last_curate) >= config.USER_EVENTS_REFRESH_SECONDS:
+                last_curate = time.monotonic()
+                _curate(con)
     finally:
         # Commit buffered rows and release ports.
         try:
             con.execute(f"SELECT * FROM otlp_stop('{config.OTLP_URI}');")
         except Exception as exc:  # noqa: BLE001 - best-effort shutdown
             print(f"[nilalytics] otlp_stop error: {exc}", flush=True)
+        # Final catch-up so the just-committed rows are curated before we exit.
+        if config.USER_EVENTS_ENABLED:
+            _curate(con)
         try:
             con.execute(f"CALL quack_stop('{config.QUACK_URI}');")
         except Exception as exc:  # noqa: BLE001 - best-effort shutdown

@@ -65,6 +65,19 @@ See [Storage backends](storage-backends.md) for full examples.
 | `NILA_PARTITION_BY` | `day(time_unix_nano)` | DuckLake partition transform |
 | `NILA_SORTED_BY` | `body, time_unix_nano` | DuckLake sort order |
 
+## Curated `user_events`
+
+The server keeps a curated per‑user table for recommendations / ML — see
+[User events](user-events.md).
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NILA_USER_EVENTS` | `true` | Build + refresh the curated `user_events` table |
+| `NILA_USER_EVENTS_TABLE` | `user_events` | Curated table name |
+| `NILA_USER_EVENTS_REFRESH_SECONDS` | `60` | How often the server appends new rows |
+| `NILA_USER_EVENTS_PARTITION_BY` | `day(event_time)` | Partition (keep **low‑cardinality**) |
+| `NILA_USER_EVENTS_SORTED_BY` | `person_id, event_time_unix_nano` | Cluster by person for fast per‑user reads |
+
 ## Read path (Quack)
 
 | Variable | Default | Description |

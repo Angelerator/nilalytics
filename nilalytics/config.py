@@ -133,6 +133,20 @@ ID_SALT = os.getenv("NILA_ID_SALT", _SECRETS["id_salt"])
 PARTITION_BY = os.getenv("NILA_PARTITION_BY", "day(time_unix_nano)")
 SORTED_BY = os.getenv("NILA_SORTED_BY", "body, time_unix_nano")
 
+# --- Curated user_events table (built for per-user reads: recommendations / ML) ---
+# A downstream table that lifts identity + the common event fields out of the
+# otlp_logs JSON into typed, first-class columns. It is partitioned by day (a
+# low-cardinality key) and CLUSTERED (sorted) by person_id, so "give me one
+# user's history" prunes to a handful of files -- WITHOUT the partition-per-user
+# tiny-file explosion that keying the partition on user_id would cause.
+USER_EVENTS_ENABLED = os.getenv("NILA_USER_EVENTS", "true").lower() == "true"
+USER_EVENTS_TABLE = os.getenv("NILA_USER_EVENTS_TABLE", "user_events")
+# The server refreshes it incrementally (DuckLake change feed) on this cadence.
+USER_EVENTS_REFRESH_SECONDS = int(os.getenv("NILA_USER_EVENTS_REFRESH_SECONDS", "60"))
+# Physical layout of the curated table (keep the partition low-cardinality).
+USER_EVENTS_PARTITION_BY = os.getenv("NILA_USER_EVENTS_PARTITION_BY", "day(event_time)")
+USER_EVENTS_SORTED_BY = os.getenv("NILA_USER_EVENTS_SORTED_BY", "person_id, event_time_unix_nano")
+
 # --- Safety guardrails ---
 _LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1", "[::1]"}
 
