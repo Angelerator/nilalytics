@@ -12,7 +12,6 @@ Run it:  uv run python -m nilalytics.emitter --count 200
 from __future__ import annotations
 
 import argparse
-import hashlib
 import os
 import random
 import time
@@ -20,7 +19,7 @@ import uuid
 
 import requests
 
-from . import config
+from . import config, identity
 
 PRODUCT_EVENTS = ["page_view", "signup_start", "signup_complete", "add_to_cart", "purchase"]
 PAGES = ["/", "/pricing", "/product", "/checkout", "/docs"]
@@ -41,11 +40,6 @@ def session_for(device: str) -> str:
     if device not in _SESSIONS or random.random() < 0.1:
         _SESSIONS[device] = uuid.uuid4().hex[:16]
     return _SESSIONS[device]
-
-
-def hash_key(raw_key: str) -> str:
-    """Pseudonymous person-key: a salted hash, done client-side. Never send raw."""
-    return hashlib.sha256((config.ID_SALT + raw_key).encode()).hexdigest()[:32]
 
 
 def _resource() -> dict:
@@ -137,7 +131,7 @@ def _post_logs(records: list[dict]) -> None:
 
 def identify(device: str, user_key: str) -> str:
     """Link a device's anonymous.id to a hashed person-key (an 'identify' event)."""
-    uid = hash_key(user_key)
+    uid = identity.hash_key(user_key)
     _post_logs([_record("identify", device, session_for(device), "INFO", 9, user=uid, extra={"method": "login"})])
     return uid
 
@@ -150,7 +144,7 @@ def emit_cross_device(persons: int, events_per_device: int = 8) -> None:
     """
     for i in range(persons):
         user_key = f"person{i}@example.com"
-        uid = hash_key(user_key)
+        uid = identity.hash_key(user_key)
         for _ in range(2):  # phone + laptop
             device = new_anonymous_id()
             session = uuid.uuid4().hex[:16]

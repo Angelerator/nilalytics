@@ -40,6 +40,7 @@ nilalytics emit [options]
 | `-e`, `--error-rate` | `0.1` | Fraction that are errors |
 | `--traces` | `10` | Trace spans |
 | `--metrics` | `10` | Metric points |
+| `--ai` | `5` | `ai_usage` events (sample LLM calls) |
 | `--persons` | `0` | Simulate N cross‑device people (2 devices each, identified) |
 
 ## `query`
@@ -53,6 +54,10 @@ nilalytics query [subcommand] [args]
 | Subcommand | Description |
 |------------|-------------|
 | `report` | Totals, funnel, errors, devices, identified persons, latency |
+| `user_events` | Curated table: size, persons, subject breakdown, curation lag |
+| `user <id> [days]` | One person's activity + logs (optionally last N days) |
+| `user --key <value> [days]` | Same, but hashes a raw key (email / account id / phone) for you |
+| `subject <name> [days]` | Everything in a subject (`errors`, `ai_usage`, …) |
 | `traces` | Recent spans + p95 latency per span |
 | `metrics` | Metric names, counts, averages |
 | `errors` | Recent errors |
@@ -64,14 +69,26 @@ nilalytics query [subcommand] [args]
 | `schema` | `otlp_logs` columns |
 | `sample` | One raw row |
 
+## `identify`
+
+Prints the `person_id` for a raw user key, so you never hash by hand. See
+[Identity](identity.md).
+
+```bash
+nilalytics identify alireza@example.com          # -> 3f9a1c...
+nilalytics query user $(nilalytics identify alireza@example.com) 3
+```
+
 ## `maintenance`
 
 Flush inlined data to Parquet and compact. See [Maintenance](maintenance.md).
 
 ```bash
 nilalytics maintenance [--expire]
+nilalytics maintenance --retention-dry-run [--days N]
 ```
 
 | Option | Description |
 |--------|-------------|
 | `--expire` | Also expire old snapshots + delete unused files (destructive) |
+| `--retention-dry-run [--days N]` | Preview what data retention would delete (read‑only) |

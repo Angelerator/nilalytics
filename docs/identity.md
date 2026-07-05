@@ -29,6 +29,37 @@ def hash_key(raw, salt):
 
 The salt is `NILA_ID_SALT` (auto‑generated and stored in the secrets file).
 
+## How you define a user (any key)
+
+nilalytics is **key‑agnostic** — the key can be **anything stable and unique**:
+
+| Key | Works? | Note |
+|-----|--------|------|
+| internal **account / user id** | ✅ best | stable, unique, you control the format |
+| **email** | ✅ | can change; normalize first |
+| **phone** | ✅ | normalize to one format (E.164) |
+
+Two rules:
+
+1. **Normalize before hashing** — `A@x.com` and `a@x.com` hash to *different*
+   people. Lowercase emails, use E.164 for phones.
+2. Use the **same** key at login and at lookup.
+
+```text
+identify("alireza@example.com")  ->  person_id 3f9a…
+lookup   "alireza@example.com"   ->  person_id 3f9a…   ✅ matches
+```
+
+## Look someone up by their key
+
+You don't need to hash by hand. `identify` prints the person id for a raw key, and
+`query user --key` does the hashing for you:
+
+```bash
+nilalytics identify alireza@example.com          # -> 3f9a1c...
+nilalytics query user --key alireza@example.com 3  # that person's activity, last 3 days
+```
+
 ## The `identify` event
 
 When a device learns the user, it emits an `identify` event linking that

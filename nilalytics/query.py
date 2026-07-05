@@ -8,6 +8,7 @@ server where the DuckLake is attached.
 Run it:  uv run python -m nilalytics.query report
          uv run python -m nilalytics.query user_events
          uv run python -m nilalytics.query user <person_id> [days]
+         uv run python -m nilalytics.query user --key <user-key> [days]
          uv run python -m nilalytics.query subject <name> [days]
          uv run python -m nilalytics.query schema
          uv run python -m nilalytics.query flush
@@ -20,7 +21,7 @@ import time
 
 import duckdb
 
-from . import config, curate
+from . import config, curate, identity
 
 
 def connect() -> duckdb.DuckDBPyConnection:
@@ -368,11 +369,18 @@ def main(argv=None) -> None:
             user_events(con)
         elif cmd == "user":
             flush(con)
-            if len(argv) > 1:
-                days = int(argv[2]) if len(argv) > 2 else None
-                user(con, argv[1], days)
+            rest = argv[1:]
+            if rest and rest[0] == "--key":
+                if len(rest) < 2:
+                    print("usage: nilalytics query user --key <user-key> [days]")
+                else:
+                    pid = identity.hash_key(rest[1])
+                    print(f"(key '{rest[1]}' -> person_id {pid})")
+                    user(con, pid, int(rest[2]) if len(rest) > 2 else None)
+            elif rest:
+                user(con, rest[0], int(rest[1]) if len(rest) > 1 else None)
             else:
-                print("usage: nilalytics query user <person_id> [days]")
+                print("usage: nilalytics query user <person_id | --key value> [days]")
         elif cmd == "subject":
             flush(con)
             if len(argv) > 1:

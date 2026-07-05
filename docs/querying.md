@@ -11,6 +11,7 @@ nilalytics query report      # totals, funnel, errors, devices, identified perso
 nilalytics query user_events    # curated table: size, persons, subject breakdown, lag
 nilalytics query user <id>      # one person's full activity + logs (recommendation input)
 nilalytics query user <id> 16   # same, limited to the last 16 days
+nilalytics query user --key alireza@example.com 3   # look up by raw key (hashed for you)
 nilalytics query subject <name> [days]  # everything in a subject (errors, ai_usage, ...)
 nilalytics query traces      # recent spans + p95 latency per span
 nilalytics query metrics     # metric names, counts, averages (e.g. web-vitals)
