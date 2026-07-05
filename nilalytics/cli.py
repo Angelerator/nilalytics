@@ -24,7 +24,7 @@ commands:
   server                      run the ingest + Quack catalog server
   gateway                     run the public ingest gateway (CORS, short-lived tokens, TLS)
   emit [options]              send sample logs/traces/metrics (--persons for cross-device)
-  query [subcommand] [args]   report | user_events | user <id> [days] | traces | metrics | stitch | asof | changes | snapshots | errors
+  query [subcommand] [args]   report | user_events | user <id> [days] | subject <name> [days] | traces | metrics | stitch | asof | changes | snapshots | errors
   maintenance [--expire]      flush inlined data to Parquet + compact
   maintenance --retention-dry-run [--days N]   preview what data retention would delete (read-only)
 """

@@ -8,6 +8,7 @@ server where the DuckLake is attached.
 Run it:  uv run python -m nilalytics.query report
          uv run python -m nilalytics.query user_events
          uv run python -m nilalytics.query user <person_id> [days]
+         uv run python -m nilalytics.query subject <name> [days]
          uv run python -m nilalytics.query schema
          uv run python -m nilalytics.query flush
 """
@@ -19,7 +20,7 @@ import time
 
 import duckdb
 
-from . import config
+from . import config, curate
 
 
 def connect() -> duckdb.DuckDBPyConnection:
@@ -241,6 +242,12 @@ def user_events(con: duckdb.DuckDBPyConnection) -> None:
     print(f"distinct persons:   {persons}")
     print(f"identified users:   {identified}")
 
+    print("\nby subject (partition):")
+    for subj, n in rq(
+        con, f"SELECT subject, count(*) c FROM {lake}.main.{tbl} GROUP BY 1 ORDER BY c DESC"
+    ).fetchall():
+        print(f"  {subj:<14} {n}")
+
     # Curation lag: newest raw event vs newest curated event.
     lag_ns = rq(
         con,
@@ -298,6 +305,34 @@ def user(con: duckdb.DuckDBPyConnection, pid: str, days: int | None = None) -> N
         print(f"  ... ({total - len(rows)} more; narrow the window or use SQL)")
 
 
+def subject(con: duckdb.DuckDBPyConnection, name: str, days: int | None = None) -> None:
+    """Recent events in one subject partition (errors / ai_usage / ...), optionally windowed."""
+    lake, tbl = config.LAKE, config.USER_EVENTS_TABLE
+    where = f"subject = '{name}'"
+    window = ""
+    if days:
+        where += f" AND event_time > now() - INTERVAL '{int(days)} days'"
+        window = f" in the last {int(days)} days"
+
+    total = rq(con, f"SELECT count(*) FROM {lake}.main.{tbl} WHERE {where}").fetchone()[0]
+    print(f"subject '{name}': {total} events{window}")
+    if not total:
+        print(f"  (no events; subjects are: {', '.join(curate.SUBJECTS)})")
+        return
+    print("\ntop events:")
+    for ev, n in rq(
+        con, f"SELECT event, count(*) c FROM {lake}.main.{tbl} WHERE {where} GROUP BY 1 ORDER BY c DESC LIMIT 10"
+    ).fetchall():
+        print(f"  {ev:<18} {n}")
+    print("\nrecent (newest first):")
+    for t, ev, pid, page in rq(
+        con,
+        f"SELECT event_time, event, person_id, page FROM {lake}.main.{tbl} "
+        f"WHERE {where} ORDER BY event_time_unix_nano DESC LIMIT 20",
+    ).fetchall():
+        print(f"  {t}  {ev:<16} {(pid or '')[:12]:<12} {page or ''}")
+
+
 def main(argv=None) -> None:
     argv = list(sys.argv[1:] if argv is None else argv)
     cmd = argv[0] if argv else "report"
@@ -338,6 +373,13 @@ def main(argv=None) -> None:
                 user(con, argv[1], days)
             else:
                 print("usage: nilalytics query user <person_id> [days]")
+        elif cmd == "subject":
+            flush(con)
+            if len(argv) > 1:
+                days = int(argv[2]) if len(argv) > 2 else None
+                subject(con, argv[1], days)
+            else:
+                print(f"usage: nilalytics query subject <{'|'.join(curate.SUBJECTS)}> [days]")
         elif cmd == "asof":
             flush(con)
             asof(con, argv[1] if len(argv) > 1 else "1 hour")

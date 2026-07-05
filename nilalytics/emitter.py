@@ -190,6 +190,34 @@ def emit_traces(n: int) -> None:
     print(f"[emitter] sent {n} spans -> {resp.status_code}", flush=True)
 
 
+# --- AI usage (LLM calls: model + token usage; subject 'ai_usage') ---
+AI_PROVIDERS = [("openai", "gpt-4o"), ("anthropic", "claude-3-5-sonnet"), ("google", "gemini-1.5-pro")]
+
+
+def make_ai_events(n: int) -> list[dict]:
+    records = []
+    for _ in range(n):
+        device = random.choice(DEVICE_POOL)
+        system, model = random.choice(AI_PROVIDERS)
+        records.append(
+            _record(
+                "ai_request", device, session_for(device), "INFO", 9,
+                extra={
+                    "gen_ai.system": system,
+                    "gen_ai.request.model": model,
+                    "gen_ai.usage.input_tokens": str(random.randint(50, 2000)),
+                    "gen_ai.usage.output_tokens": str(random.randint(20, 1500)),
+                },
+            )
+        )
+    return records
+
+
+def emit_ai(n: int) -> None:
+    _post_logs(make_ai_events(n))
+    print(f"[emitter] sent {n} ai_usage events", flush=True)
+
+
 # --- Metrics (e.g. web-vitals gauges) ---
 def make_points(n: int) -> list[dict]:
     return [{"timeUnixNano": str(time.time_ns()),
@@ -216,6 +244,7 @@ def main(argv=None) -> None:
     parser.add_argument("-e", "--error-rate", type=float, default=0.1)
     parser.add_argument("--traces", type=int, default=10, help="trace spans")
     parser.add_argument("--metrics", type=int, default=10, help="metric points")
+    parser.add_argument("--ai", type=int, default=5, help="ai_usage events (LLM calls)")
     parser.add_argument("--persons", type=int, default=0,
                         help="simulate N cross-device persons (2 devices each, identified)")
     args = parser.parse_args(argv)
@@ -225,6 +254,8 @@ def main(argv=None) -> None:
         emit_traces(args.traces)
     if args.metrics:
         emit_metrics(args.metrics)
+    if args.ai:
+        emit_ai(args.ai)
     if args.persons:
         emit_cross_device(args.persons)
 

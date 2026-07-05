@@ -65,10 +65,11 @@ Queries transparently combine both.
 
 `otlp_logs` is tuned for ingest (date‑partitioned, identity in JSON). For
 per‑user reads — the core of recommendations — the server also maintains a
-curated **`user_events`** table: identity lifted into typed columns, partitioned
-by day and **sorted by `person_id`** so one user's history prunes to a few files.
-It refreshes incrementally from the DuckLake change feed. See
-[User events](user-events.md).
+curated **`user_events`** table: identity + fields lifted into typed columns,
+partitioned **`subject › date › bucket(person_id)`** and **sorted by `person_id`**
+so a single person, a subject, or a time window all prune well (the high‑cardinality
+`person_id` is hashed into buckets, never partitioned raw). It refreshes
+incrementally from the DuckLake change feed. See [User events](user-events.md).
 
 ## Processes you run
 

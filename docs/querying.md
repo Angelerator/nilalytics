@@ -8,9 +8,10 @@ read‑only policy (see [Security](security.md)).
 
 ```bash
 nilalytics query report      # totals, funnel, errors, devices, identified persons, latency
-nilalytics query user_events    # curated per-user table: size, persons, top activity, lag
+nilalytics query user_events    # curated table: size, persons, subject breakdown, lag
 nilalytics query user <id>      # one person's full activity + logs (recommendation input)
 nilalytics query user <id> 16   # same, limited to the last 16 days
+nilalytics query subject <name> [days]  # everything in a subject (errors, ai_usage, ...)
 nilalytics query traces      # recent spans + p95 latency per span
 nilalytics query metrics     # metric names, counts, averages (e.g. web-vitals)
 nilalytics query errors      # recent errors (type, message, service)
@@ -62,15 +63,16 @@ FROM remote.query('
 
 See [Backend activity](backend.md) for instrumenting and tying spans to the user.
 
-## Per‑user reads (recommendations)
+## Per‑user & per‑subject reads
 
-The curated `user_events` table has typed columns and is **sorted by `person_id`**,
-so pulling one person's history prunes to a few files. See [User events](user-events.md).
+The curated `user_events` table is partitioned **`subject › date › bucket(person_id)`**
+and sorted by `person_id`, so both a single person and a whole subject prune well.
+See [User events](user-events.md).
 
 ```sql
 -- one person's activity + logs in the last 16 days, newest first
 FROM remote.query('
-  SELECT event_time, event, severity_text, page
+  SELECT event_time, subject, event, severity_text, page
   FROM lake.main.user_events
   WHERE person_id = ''<person-id>''
     AND event_time > now() - INTERVAL ''16 days''
@@ -78,7 +80,8 @@ FROM remote.query('
 ');
 ```
 
-Or with the CLI: `nilalytics query user <person-id> 16`.
+Or with the CLI: `nilalytics query user <person-id> 16` and
+`nilalytics query subject ai_usage 16`.
 
 ## Handy columns
 

@@ -75,8 +75,11 @@ The server keeps a curated per‑user table for recommendations / ML — see
 | `NILA_USER_EVENTS` | `true` | Build + refresh the curated `user_events` table |
 | `NILA_USER_EVENTS_TABLE` | `user_events` | Curated table name |
 | `NILA_USER_EVENTS_REFRESH_SECONDS` | `60` | How often the server appends new rows |
-| `NILA_USER_EVENTS_PARTITION_BY` | `day(event_time)` | Partition (keep **low‑cardinality**) |
+| `NILA_USER_EVENTS_BUCKETS` | `16` | Number of `person_id` hash buckets (raise for high volume) |
+| `NILA_USER_EVENTS_PARTITION_BY` | `subject, day(event_time), bucket(16, person_id)` | Partition: subject › date › person‑bucket |
 | `NILA_USER_EVENTS_SORTED_BY` | `person_id, event_time_unix_nano` | Cluster by person for fast per‑user reads |
+
+See [User events → Tuning](user-events.md#tuning-for-your-volume) for sizing the buckets/partitions.
 
 ## Data retention
 

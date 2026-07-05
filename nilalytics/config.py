@@ -143,8 +143,22 @@ USER_EVENTS_ENABLED = os.getenv("NILA_USER_EVENTS", "true").lower() == "true"
 USER_EVENTS_TABLE = os.getenv("NILA_USER_EVENTS_TABLE", "user_events")
 # The server refreshes it incrementally (DuckLake change feed) on this cadence.
 USER_EVENTS_REFRESH_SECONDS = int(os.getenv("NILA_USER_EVENTS_REFRESH_SECONDS", "60"))
-# Physical layout of the curated table (keep the partition low-cardinality).
-USER_EVENTS_PARTITION_BY = os.getenv("NILA_USER_EVENTS_PARTITION_BY", "day(event_time)")
+# Physical layout of the curated table. subject (a handful) and day() are natural
+# LOW-cardinality partitions. person_id is HIGH-cardinality, so it is partitioned
+# via bucket(N, ...) -- Iceberg-style hashing into N folders -- which is DuckLake's
+# recommended way to partition on a high-cardinality key WITHOUT the
+# millions-of-tiny-files problem. person_id is also a SORT key, so one person's
+# rows are contiguous inside their bucket.
+#
+# The three partition levels multiply (subject x days x N buckets). Tune for volume:
+#   * high volume  -> raise NILA_USER_EVENTS_BUCKETS (e.g. 256) for finer pruning;
+#   * low volume   -> drop day, e.g. NILA_USER_EVENTS_PARTITION_BY="subject, bucket(256, person_id)".
+# Compaction (nilalytics maintenance) merges small files WITHIN each partition.
+USER_EVENTS_BUCKETS = int(os.getenv("NILA_USER_EVENTS_BUCKETS", "16"))
+USER_EVENTS_PARTITION_BY = os.getenv(
+    "NILA_USER_EVENTS_PARTITION_BY",
+    f"subject, day(event_time), bucket({USER_EVENTS_BUCKETS}, person_id)",
+)
 USER_EVENTS_SORTED_BY = os.getenv("NILA_USER_EVENTS_SORTED_BY", "person_id, event_time_unix_nano")
 
 # --- Data retention (drop events older than N days so storage stays bounded) ---
