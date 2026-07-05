@@ -1,6 +1,6 @@
 [project]
 name = "nilalytics"
-version = "0.2.0"
+version = "0.3.0"
 description = "Serverless realtime analytics: OTLP events -> DuckLake on object storage (S3/GCS/R2/Azure), served over Quack."
 readme = "README.md"
 requires-python = ">=3.11"
