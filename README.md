@@ -14,7 +14,10 @@ storage, and serves sub‑second reads over DuckDB's [Quack](https://duckdb.org/
 
 - **Web, mobile _and_ backends:** Grafana Faro (web), OpenTelemetry SDKs (mobile + server) → OTLP. Record user actions *and* whether the backend calls behind them succeeded — in one lake.
 - **Runs on any cloud:** S3, MinIO, Google Cloud Storage, Cloudflare R2, or Azure / ADLS Gen2.
-- **Small files solved:** DuckLake data inlining keeps streaming writes fast and cheap.
+- **Recommendation‑ready:** a curated per‑user `user_events` table, partitioned **subject › date › person**, so "everything this user did" is one fast read. Look anyone up by email / account id / phone.
+- **Subjects & AI usage:** every event is classified — `errors` · `activities` · `ai_usage` · `traceability` — so category reads and LLM/token tracking prune to their own partition.
+- **Small files solved:** DuckLake data inlining + compaction keep streaming writes fast and files healthy.
+- **Bounded storage:** opt‑in data retention drops old events (with a read‑only dry‑run preview).
 - **Batteries included:** funnels, retention, errors, traces, metrics, cross‑device identity.
 - **Secure by default:** token‑authenticated ingest, read‑only query authz, a hardened public gateway.
 
@@ -44,6 +47,8 @@ nilalytics gateway &     # public ingest gateway (CORS + tokens)
 # 3. send + query
 nilalytics emit --count 200 --persons 5
 nilalytics query report
+nilalytics query subject ai_usage 7                # per-subject read (last 7 days)
+nilalytics query user --key person0@example.com 3  # one person's activity (last 3 days)
 ```
 
 ## Architecture
