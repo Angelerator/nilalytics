@@ -1,0 +1,9 @@
+#!/bin/sh
+# Strip Cursor's auto-added co-author trailer so it never enters git history
+# (keeps the repo's contributor list to the real author only).
+#
+# Enabled per-repo with:  git config core.hooksPath .githooks
+#
+# $1 is the path to the file holding the proposed commit message.
+msg="$1"
+sed -i.bak '/^Co-authored-by: Cursor <cursoragent@cursor\.com>/d' "$msg" && rm -f "$msg.bak"
